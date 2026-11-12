@@ -1,0 +1,75 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+
+export default function LoginPage() {
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const form = new FormData(event.currentTarget);
+    setError("");
+    setMessage("");
+    setLoading(true);
+
+    try {
+      const response = await fetch("/backend/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.get("email"),
+          password: form.get("password"),
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setError(data?.detail ?? "No se pudo iniciar sesión.");
+        return;
+      }
+
+      setMessage(`Sesión iniciada. Bienvenida, ${data.name}.`);
+    } catch {
+      setError("No se pudo conectar con la API. Intenta de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <main>
+      <h1>Iniciar sesión</h1>
+
+      <form onSubmit={handleSubmit}>
+        <p>
+          <label htmlFor="email">Correo electrónico</label>
+          <br />
+          <input id="email" name="email" type="email" autoComplete="email" required />
+        </p>
+
+        <p>
+          <label htmlFor="password">Contraseña</label>
+          <br />
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+          />
+        </p>
+
+        <button type="submit" disabled={loading}>
+          {loading ? "Entrando…" : "Entrar"}
+        </button>
+      </form>
+
+      {error && <p role="alert">{error}</p>}
+      {message && <p role="status">{message}</p>}
+    </main>
+  );
+}
