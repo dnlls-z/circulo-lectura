@@ -1,6 +1,7 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import Link from "next/link";
+
 import LogoutButton from "./LogoutButton";
+import { fetchCatalog } from "./catalogApi";
 
 type Book = {
   id: number;
@@ -13,28 +14,16 @@ type Book = {
 };
 
 export default async function CatalogoPage() {
-  const session = (await cookies()).get("session");
-
-  if (!session) {
-    redirect("/login");
-  }
-
-  const apiUrl = process.env.API_INTERNAL_URL ?? "http://127.0.0.1:8000";
-
-  const response = await fetch(`${apiUrl}/books`, {
-    headers: { Cookie: `session=${session.value}` },
-    cache: "no-store",
-  }).catch(() => null);
-
-  if (response?.status === 401) {
-    redirect("/login");
-  }
+  const response = await fetchCatalog("/books");
 
   if (!response?.ok) {
     return (
       <main>
         <h1>Catálogo de libros</h1>
-        <p role="alert">No se pudo cargar el catálogo. Revisa que FastAPI esté corriendo y recarga la página.</p>
+        <p role="alert">
+          No se pudo cargar el catálogo. Revisa que FastAPI esté corriendo y
+          recarga la página.
+        </p>
       </main>
     );
   }
@@ -63,7 +52,9 @@ export default async function CatalogoPage() {
           <tbody>
             {books.map((book) => (
               <tr key={book.id}>
-                <td>{book.titulo}</td>
+                <td>
+                  <Link href={`/catalogo/${book.id}`}>{book.titulo}</Link>
+                </td>
                 <td>{book.autor}</td>
                 <td>{book.isbn}</td>
                 <td>{book.genero}</td>
