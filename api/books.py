@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
 from api.auth import current_user
@@ -88,5 +88,24 @@ def create_book(data: BookRequest):
 
     if book is None:
         raise HTTPException(status_code=409, detail="Ya existe un libro con ese ISBN.")
+
+    return book
+
+
+@router.get("/{book_id}")
+def get_book(book_id: Annotated[int, Path(ge=1, le=2147483647)]):
+    with connect_db() as connection:
+        book = connection.execute(
+            """
+            SELECT id, isbn, titulo, autor, genero, anio_publicacion, paginas,
+                   sinopsis, created_at, updated_at
+            FROM books
+            WHERE id = %s
+            """,
+            (book_id,),
+        ).fetchone()
+
+    if book is None:
+        raise HTTPException(status_code=404, detail="El libro no existe.")
 
     return book
