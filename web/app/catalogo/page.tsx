@@ -35,6 +35,10 @@ export default async function CatalogoPage() {
       <h1>Catálogo de libros</h1>
       <LogoutButton />
 
+      <p>
+        <Link href="/catalogo/nuevo">Agregar libro</Link>
+      </p>
+
       {books.length === 0 ? (
         <p>Todavía no hay libros en el catálogo.</p>
       ) : (
