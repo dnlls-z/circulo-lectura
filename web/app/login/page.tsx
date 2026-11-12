@@ -4,7 +4,6 @@ import { useState, type FormEvent } from "react";
 
 export default function LoginPage() {
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -12,7 +11,6 @@ export default function LoginPage() {
 
     const form = new FormData(event.currentTarget);
     setError("");
-    setMessage("");
     setLoading(true);
 
     try {
@@ -32,7 +30,7 @@ export default function LoginPage() {
         return;
       }
 
-      setMessage(`Sesión iniciada. Bienvenida, ${data.name}.`);
+      window.location.assign("/catalogo");
     } catch {
       setError("No se pudo conectar con la API. Intenta de nuevo.");
     } finally {
@@ -69,7 +67,6 @@ export default function LoginPage() {
       </form>
 
       {error && <p role="alert">{error}</p>}
-      {message && <p role="status">{message}</p>}
     </main>
   );
 }
