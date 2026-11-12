@@ -3,7 +3,7 @@ from typing import Annotated
 
 from psycopg.errors import UniqueViolation
 
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path, Response
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
 from api.auth import current_user
@@ -155,6 +155,20 @@ def update_book(
         raise HTTPException(status_code=404, detail="El libro no existe.")
 
     return book
+
+
+@router.delete("/{book_id}", status_code=204)
+def delete_book(book_id: Annotated[int, Path(ge=1, le=2147483647)]):
+    with connect_db() as connection:
+        deleted_book = connection.execute(
+            "DELETE FROM books WHERE id = %s RETURNING id",
+            (book_id,),
+        ).fetchone()
+
+    if deleted_book is None:
+        raise HTTPException(status_code=404, detail="El libro no existe.")
+
+    return Response(status_code=204)
 
 
 
