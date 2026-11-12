@@ -1,16 +1,8 @@
 import Link from "next/link";
 
+import type { Book } from "../BookForm";
 import { fetchCatalog } from "../catalogApi";
-
-type BookDetail = {
-  isbn: string;
-  titulo: string;
-  autor: string;
-  genero: string;
-  anio_publicacion: number;
-  paginas: number;
-  sinopsis: string | null;
-};
+import DeleteBookButton from "./DeleteBookButton";
 
 export default async function BookDetailPage({
   params,
@@ -37,7 +29,7 @@ export default async function BookDetailPage({
     );
   }
 
-  const book: BookDetail = await response.json();
+  const book: Book = await response.json();
 
   return (
     <main>
@@ -45,8 +37,9 @@ export default async function BookDetailPage({
       <h1>{book.titulo}</h1>
 
       <p>
-        <Link href={`/catalogo/${bookId}/editar`}>Editar libro</Link>
+        <Link href={`/catalogo/${book.id}/editar`}>Editar libro</Link>
       </p>
+      <DeleteBookButton bookId={book.id} title={book.titulo} />
 
       <p><strong>Autor:</strong> {book.autor}</p>
       <p><strong>ISBN:</strong> {book.isbn}</p>
