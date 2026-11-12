@@ -1,4 +1,5 @@
 import Link from "next/link";
+
 import { fetchCatalog } from "../catalogApi";
 
 type BookDetail = {
@@ -17,7 +18,8 @@ export default async function BookDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const response = await fetchCatalog(`/books/${encodeURIComponent(id)}`);
+  const bookId = encodeURIComponent(id);
+  const response = await fetchCatalog(`/books/${bookId}`);
 
   if (!response?.ok) {
     const message =
@@ -41,11 +43,17 @@ export default async function BookDetailPage({
     <main>
       <Link href="/catalogo">Volver al catálogo</Link>
       <h1>{book.titulo}</h1>
+
+      <p>
+        <Link href={`/catalogo/${bookId}/editar`}>Editar libro</Link>
+      </p>
+
       <p><strong>Autor:</strong> {book.autor}</p>
       <p><strong>ISBN:</strong> {book.isbn}</p>
       <p><strong>Género:</strong> {book.genero}</p>
       <p><strong>Año de publicación:</strong> {book.anio_publicacion}</p>
       <p><strong>Páginas:</strong> {book.paginas}</p>
+
       {book.sinopsis && (
         <section>
           <h2>Sinopsis</h2>
