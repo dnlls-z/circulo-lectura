@@ -1,73 +1,71 @@
 # Círculo de Lectura
 
-Catálogo de libros para la prueba técnica de Tractoandes. Permite registrar
-usuarios, iniciar y cerrar sesión, y consultar, crear, editar y eliminar libros
-desde una interfaz web.
+Catálogo de libros para la prueba técnica de Tractoandes. La aplicación permite
+registrar usuarios, iniciar y cerrar sesión, y consultar, crear, editar y eliminar
+libros desde una interfaz web.
 
 ## Requisitos
 
 - Git.
-- Docker con Docker Compose. En Windows, se puede usar Docker Desktop.
+- Docker con Docker Compose. Si utiliza Windows, puede usar Docker Desktop.
 
 ## Arranque local
 
-Clona el repositorio y entra en la carpeta:
+Con Docker iniciado, ejecute:
 
 ```bash
 git clone https://github.com/dnlls-z/circulo-lectura.git
 cd circulo-lectura
-```
-
-Crea el archivo `.env` a partir de `.env.example`. En PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-En macOS o Linux:
-
-```bash
-cp .env.example .env
-```
-
-Arranca los servicios:
-
-```bash
 docker compose up --build
 ```
 
-Abre [http://localhost:3000](http://localhost:3000). En el primer arranque,
-la API aplica las migraciones y prepara dos libros y una cuenta de demostración.
+Abra [http://localhost:3000](http://localhost:3000). En el primer arranque,
+la API aplica las migraciones pendientes, carga dos libros de ejemplo y prepara
+la cuenta de demostración.
 
 | Campo | Valor de demostración |
 | --- | --- |
 | Correo | `demo@example.com` |
 | Contraseña | `LecturaDemo2026!` |
 
-La documentación interactiva de la API está en
+Puede consultar la documentación interactiva de la API en
 [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs).
 
-Para detener el entorno, usa `docker compose down`. El volumen de PostgreSQL
-conserva los datos. El archivo `.env` es local y está excluido de Git.
+### Configuración opcional
+
+Docker Compose usa valores locales de demostración por defecto. Si desea
+personalizarlos, copie `.env.example` a `.env` y edite sus valores. En PowerShell,
+ejecute `Copy-Item .env.example .env`. En macOS o Linux, ejecute
+`cp .env.example .env`. Git excluye `.env`.
+
+### Detener la aplicación
+
+Presione `Ctrl+C` en la terminal donde se ejecuta Compose. También puede
+ejecutar `docker compose down` desde la carpeta del proyecto. El volumen de
+PostgreSQL conserva los datos entre arranques.
 
 ## Arquitectura y decisiones
 
-- **Next.js con App Router y TypeScript** organiza las pantallas del catálogo.
-  El formulario de libros se comparte entre alta y edición.
-- **FastAPI** recibe las peticiones. Elegí Python porque podía aprovechar mi
-  experiencia con ese lenguaje y con SQL. Pydantic valida los datos de entrada.
-- **PostgreSQL y Psycopg** almacenan y consultan los datos con SQL parametrizado.
-  La base de datos aplica la restricción de ISBN único.
+- **Next.js con App Router y TypeScript** organiza las pantallas de registro,
+  inicio de sesión y catálogo. El mismo formulario sirve para crear y editar
+  libros.
+- **FastAPI** implementa la API como un servicio independiente. Elegí Python
+  para aprovechar mi experiencia con ese lenguaje y con SQL. Pydantic valida
+  los datos de entrada.
+- **PostgreSQL y Psycopg** permiten consultar y guardar los datos con SQL
+  parametrizado. PostgreSQL garantiza que cada ISBN sea único.
 - **Sesiones en PostgreSQL.** Las contraseñas se guardan como hashes Argon2.
-  El navegador recibe una cookie de sesión y PostgreSQL guarda el hash del
-  token y su fecha de expiración. Al cerrar sesión, la API revoca esa sesión.
-- **Docker Compose** coordina `db`, `api` y `web`. La API espera a PostgreSQL,
-  aplica los archivos SQL pendientes y prepara la cuenta de demostración.
-  Next.js reenvía las peticiones `/backend/*` a FastAPI.
+  Al iniciar sesión, el navegador recibe una cookie y PostgreSQL guarda el hash
+  del token junto con su caducidad. Elegí sesiones para poder revocar el acceso
+  desde el servidor al cerrar sesión.
+- **Docker Compose** coordina los servicios `db`, `api` y `web`. FastAPI espera
+  a que PostgreSQL acepte conexiones antes de aplicar las migraciones y
+  preparar la cuenta de demostración. Next.js reenvía las peticiones
+  `/backend/*` a FastAPI.
 
 ## Endpoints
 
-Las rutas del catálogo requieren una sesión válida.
+Las rutas de libros requieren una sesión válida.
 
 | Método | Ruta | Operación |
 | --- | --- | --- |
@@ -82,20 +80,27 @@ Las rutas del catálogo requieren una sesión válida.
 | PUT | `/books/{book_id}` | Editar un libro |
 | DELETE | `/books/{book_id}` | Eliminar un libro |
 
-La API devuelve `400` para datos inválidos, `401` si falta una sesión válida,
-`404` si el libro no existe y `409` si el ISBN o el correo ya están registrados.
+La API devuelve `400` para datos inválidos, `401` cuando falta una sesión válida
+o las credenciales son incorrectas, `404` si el libro no existe y `409` si el
+ISBN o el correo ya están registrados.
 
 ## Cómo probar el flujo
 
-1. Abre el catálogo en incógnito y confirma que redirige al inicio de sesión.
-2. Registra una cuenta o entra con la cuenta de demostración.
-3. Crea un libro, abre su ficha y edita sus páginas.
-4. Intenta guardar otro libro con el mismo ISBN y comprueba el mensaje.
-5. Prueba cancelar el borrado y luego confirma que el libro se puede eliminar.
-6. Cierra sesión y comprueba que el catálogo vuelve a pedir acceso.
+1. Abra [el catálogo](http://localhost:3000/catalogo) en una ventana de incógnito
+   y confirme que la aplicación lo redirige a `/login`.
+2. Registre una cuenta o inicie sesión con la cuenta de demostración.
+3. Cree un libro, abra su ficha y edite el número de páginas. Recargue la ficha
+   y compruebe que se guardó el cambio.
+4. Intente crear otro libro con el mismo ISBN y verifique que la interfaz
+   muestre el error.
+5. Pulse **Eliminar libro** y cancele la operación. Compruebe que el libro
+   sigue en la ficha. Repita la operación y confirme el borrado. El libro
+   debe desaparecer del catálogo.
+6. Cierre sesión y vuelva a abrir `/catalogo`. La aplicación debe redirigirlo
+   nuevamente al inicio de sesión.
 
 ## Mejoras futuras
 
-Agregaría pruebas automatizadas del flujo completo y paginación para catálogos
-grandes. Para un despliegue público configuraría HTTPS, cookies `Secure`
-y credenciales propias.
+Agregaría pruebas automatizadas del recorrido completo y paginación para
+catálogos grandes. Para un despliegue público, configuraría HTTPS, cookies
+`Secure` y credenciales propias.
