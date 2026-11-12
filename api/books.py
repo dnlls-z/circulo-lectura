@@ -1,6 +1,8 @@
 from datetime import date
 from typing import Annotated
 
+from psycopg.errors import UniqueViolation
+
 from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
@@ -109,3 +111,53 @@ def get_book(book_id: Annotated[int, Path(ge=1, le=2147483647)]):
         raise HTTPException(status_code=404, detail="El libro no existe.")
 
     return book
+
+
+@router.put("/{book_id}")
+def update_book(
+    book_id: Annotated[int, Path(ge=1, le=2147483647)],
+    data: BookRequest):
+    try:
+        with connect_db() as connection:
+            book = connection.execute(
+                """
+                UPDATE books
+                SET isbn = %s,
+                    titulo = %s,
+                    autor = %s,
+                    genero = %s,
+                    anio_publicacion = %s,
+                    paginas = %s,
+                    sinopsis = %s,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = %s
+                RETURNING id, isbn, titulo, autor, genero, anio_publicacion,
+                          paginas, sinopsis, created_at, updated_at
+                """,
+                (
+                    data.isbn,
+                    data.titulo,
+                    data.autor,
+                    data.genero,
+                    data.anio_publicacion,
+                    data.paginas,
+                    data.sinopsis or None,
+                    book_id,
+                ),
+            ).fetchone()
+    except UniqueViolation:
+        raise HTTPException(
+            status_code=409,
+            detail="Ya existe un libro con ese ISBN.",
+        )
+
+    if book is None:
+        raise HTTPException(status_code=404, detail="El libro no existe.")
+
+    return book
+
+
+
+
+
+
