@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import { useState, type FormEvent } from "react";
 
@@ -66,7 +67,12 @@ export default function LoginPage() {
         </button>
       </form>
 
+      <p><Link href="/registro">Crear una cuenta</Link></p>
+
       {error && <p role="alert">{error}</p>}
     </main>
   );
 }
+
+
+

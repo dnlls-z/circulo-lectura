@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import LogoutButton from "./LogoutButton";
 
 type Book = {
   id: number;
@@ -43,6 +44,7 @@ export default async function CatalogoPage() {
   return (
     <main>
       <h1>Catálogo de libros</h1>
+      <LogoutButton />
 
       {books.length === 0 ? (
         <p>Todavía no hay libros en el catálogo.</p>
